@@ -285,29 +285,45 @@
         }
 
         async function playOnSpotify(uri) {
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            };
             try {
-                const res = await fetch('https://api.spotify.com/v1/me/player/play', {
+                // Buscar un dispositivo (si esta consulta falla, se intenta sin dispositivo)
+                let deviceParam = '';
+                let deviceName = '';
+                const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', { headers });
+                if (devRes.status === 401) { sessionExpired(); return; }
+                if (devRes.ok) {
+                    const devData = await devRes.json();
+                    const devices = devData.devices || [];
+                    if (devices.length === 0) {
+                        statusLabel.innerText = "Spotify no ve ningún dispositivo. Abre la app de Spotify y pon una canción.";
+                        return;
+                    }
+                    const device = devices.find(d => d.is_active) || devices[0];
+                    deviceParam = `?device_id=${device.id}`;
+                    deviceName = device.name;
+                }
+
+                const res = await fetch(`https://api.spotify.com/v1/me/player/play${deviceParam}`, {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers,
                     body: JSON.stringify({ uris: [uri] })
                 });
 
                 if (res.status === 401) { sessionExpired(); return; }
-                if (res.status === 404) {
-                    statusLabel.innerText = "Abre Spotify en algún dispositivo, pon algo un segundo y vuelve a probar.";
-                    return;
-                }
-                if (res.status === 403) {
-                    statusLabel.innerText = "Hace falta Spotify Premium para controlar la reproducción.";
+                if (!res.ok) {
+                    const txt = await res.text();
+                    console.error("Error play:", res.status, txt);
+                    statusLabel.innerText = `Spotify respondió ${res.status}${deviceName ? ' (' + deviceName + ')' : ''}: ${txt.slice(0, 100)}`;
                     return;
                 }
 
                 isPlaying = true;
                 playIcon.className = 'fa-solid fa-pause';
-                statusLabel.innerText = "¡Suena en tu Spotify! ¿Qué canción es?";
+                statusLabel.innerText = `¡Suena en ${deviceName || 'tu Spotify'}! ¿Qué canción es?`;
             } catch (err) {
                 console.error(err);
                 statusLabel.innerText = "Error al reproducir.";
