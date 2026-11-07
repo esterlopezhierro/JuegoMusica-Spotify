@@ -44,7 +44,7 @@
         <header class="p-5 flex justify-between items-center z-20">
             <div class="flex items-center gap-2">
                 <i class="fa-brands fa-spotify text-emerald-500 text-2xl"></i>
-                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Canciones que te gustan</span>
+                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">80s Rock Player</span>
             </div>
             
             <button id="configBtn" onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 cursor-pointer">
@@ -106,10 +106,10 @@
             </button>
             
             <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
-                <i class="fa-brands fa-spotify text-emerald-500"></i> Sincronizar Playlist
+                <i class="fa-brands fa-spotify text-emerald-500"></i> Sincronizar 80s Rock
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                Introduce tu Client ID para buscar y leer tu playlist exacta <b>"Canciones que te gustan"</b>.
+                Introduce tu Client ID para buscar y leer tu playlist <b>"80s rock"</b>[span_2](start_span)[span_2](end_span).
             </p>
 
             <div class="space-y-4">
@@ -155,7 +155,7 @@
             }
 
             if (accessToken) {
-                statusLabel.innerText = "¡Conectado! Buscando tu playlist...";
+                statusLabel.innerText = "¡Conectado! Buscando tu playlist 80s rock...";
                 loadPlaylistAndTrack();
             } else {
                 toggleConfigModal();
@@ -241,7 +241,7 @@
 
         async function loadPlaylistAndTrack() {
             hideSongDetails();
-            statusLabel.innerText = "Buscando playlist 'Canciones que te gustan'...";
+            statusLabel.innerText = "Buscando playlist '80s rock'...";
 
             try {
                 if (playlistTracksCache.length === 0) {
@@ -257,10 +257,11 @@
                     }
 
                     const playlistsData = await playlistsRes.json();
-                    const targetPlaylist = playlistsData.items?.find(p => p.name.toLowerCase() === "canciones que te gustan".toLowerCase());
+                    // Buscar la playlist que se llame exactamente "80s rock"
+                    const targetPlaylist = playlistsData.items?.find(p => p.name.toLowerCase() === "80s rock".toLowerCase());
 
                     if (!targetPlaylist) {
-                        statusLabel.innerText = "No se encontró la playlist 'Canciones que te gustan'.";
+                        statusLabel.innerText = "No se encontró la playlist '80s rock'.";
                         return;
                     }
 
@@ -294,7 +295,7 @@
                 artistName.innerText = currentTrack.artist;
                 releaseYear.innerText = "Año: " + currentTrack.year;
                 nativeAudio.load();
-                statusLabel.innerText = "¡Canción lista de tu playlist!";
+                statusLabel.innerText = "¡Canción lista de 80s rock!";
 
             } catch (err) {
                 console.error(err);
