@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spotify Random Secret Song</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +15,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        
         .blur-hidden {
             filter: blur(20px);
             opacity: 0.2;
@@ -26,7 +22,6 @@
             pointer-events: none;
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
         .blur-visible {
             filter: blur(0);
             opacity: 1;
@@ -37,28 +32,20 @@
 </head>
 <body class="h-full flex justify-center items-center p-2 sm:p-4 bg-slate-950 select-none overflow-hidden">
 
-    <!-- Mobile Frame Outer Container -->
     <div class="relative w-full max-w-md h-[92vh] max-h-[850px] bg-slate-900 border border-slate-800 rounded-[40px] shadow-2xl flex flex-col justify-between overflow-hidden">
-        
-        <!-- Top Status Bar & Config Button -->
+
         <header class="p-5 flex justify-between items-center z-20">
             <div class="flex items-center gap-2">
                 <i class="fa-brands fa-spotify text-emerald-500 text-2xl"></i>
-                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Spotify Random API</span>
+                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Canción Secreta</span>
             </div>
-            
-            <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded-full">v13</span>
-                <button onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-            </div>
+            <button onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-gear"></i>
+            </button>
         </header>
 
-        <!-- Main Display Screen -->
         <main class="flex-1 flex flex-col items-center justify-center px-6 relative">
-            
-            <!-- Mystery Artwork / Hidden Card -->
+
             <div class="relative w-64 h-64 sm:w-72 sm:h-72 mb-6 rounded-3xl bg-slate-800 border border-slate-700/50 shadow-2xl overflow-hidden flex items-center justify-center">
                 <img id="albumCover" class="w-full h-full object-cover blur-hidden" src="" alt="Album Cover">
                 <div id="mysteryOverlay" class="absolute flex flex-col items-center justify-center text-slate-600 transition-opacity duration-300">
@@ -67,36 +54,31 @@
                 </div>
             </div>
 
-            <!-- Native Audio Player (Sin límite de tiempo) -->
-            <div class="w-full max-w-xs mb-4">
-                <audio id="nativeAudio" controls class="w-full rounded-xl accent-emerald-500"></audio>
+            <div class="w-full max-w-xs mb-4 flex items-center justify-center gap-3">
+                <button onclick="togglePlayback()" class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center hover:bg-emerald-400 transition active:scale-95">
+                    <i id="playIcon" class="fa-solid fa-pause"></i>
+                </button>
+                <span class="text-xs text-slate-400">Suena en tu app de Spotify</span>
             </div>
 
-            <!-- Reveal Info Container -->
             <div id="songInfo" class="text-center w-full min-h-[80px] flex flex-col justify-center blur-hidden transition-all duration-500">
                 <h1 id="songTitle" class="text-xl sm:text-2xl font-extrabold text-white truncate px-2">Título</h1>
                 <p id="artistName" class="text-base font-semibold text-emerald-400 mt-1 truncate">Artista</p>
                 <p id="releaseYear" class="text-xs font-medium text-slate-400 mt-1 tracking-widest uppercase">Año</p>
             </div>
-            
+
         </main>
 
-        <!-- Controls Bar -->
         <footer class="p-6 pb-8 flex flex-col items-center gap-4 bg-slate-900/80 backdrop-blur-md border-t border-slate-800/80 z-10">
             <div class="w-full flex items-center justify-around max-w-xs">
-                
-                <!-- Next Random Song -->
-                <button onclick="loadRandomSongFromAPI()" class="w-16 h-16 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
+                <button onclick="loadNextTrack()" class="w-16 h-16 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
                     <i class="fa-solid fa-shuffle text-xl"></i>
                 </button>
-
-                <!-- Reveal Button -->
                 <button id="revealBtn" onclick="revealSongDetails()" class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition active:scale-95 shadow-md shadow-indigo-600/30">
                     <i id="revealIcon" class="fa-solid fa-eye text-xl"></i>
                 </button>
-
             </div>
-            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">¡Pulsa aleatorio para empezar!</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Pulsa ⚙️ para conectar tu Spotify</span>
         </footer>
 
     </div>
@@ -107,33 +89,44 @@
             <button onclick="toggleConfigModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            
+
             <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
-                <i class="fa-brands fa-spotify text-emerald-500"></i> Configuración Spotify
+                <i class="fa-brands fa-spotify text-emerald-500"></i> Conectar con Spotify
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                El sistema está optimizado para cargar música sin bloqueos de red. Pulsa guardar para continuar.
+                Necesitas Spotify Premium y la app abierta en algún dispositivo.
             </p>
 
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Spotify Client ID</label>
-                    <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="clientIdInput" placeholder="Pega tu Client ID aquí" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
-                <button onclick="saveSettings()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-500/20 cursor-pointer">
-                    Guardar y Jugar
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Enlace de la playlist</label>
+                    <input type="text" id="playlistInput" placeholder="https://open.spotify.com/playlist/..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <button onclick="redirectToSpotifyAuth()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                    <i class="fa-brands fa-spotify text-lg"></i> Conectar con Spotify
                 </button>
             </div>
         </div>
     </div>
 
     <script>
+        const DEFAULT_PLAYLIST_ID = '20kxyNTykQPlbmt15fiPqY'; // Hitster Temazos
+        const TOKEN_KEY = 'spotify_access_token_v2'; // clave nueva: obliga a reconectar con los permisos nuevos
+
         let currentTrack = null;
         let isRevealed = false;
-        let clientId = localStorage.getItem('spotify_client_id') || '9429d2ad7da54a9a9842a24f7a94c509';
+        let isPlaying = true;
+        let accessToken = localStorage.getItem(TOKEN_KEY) || null;
+        let clientId = localStorage.getItem('spotify_client_id') || '';
+        let playlistId = localStorage.getItem('spotify_playlist_id') || DEFAULT_PLAYLIST_ID;
+        let playlistTracksCache = [];
 
-        const nativeAudio = document.getElementById('nativeAudio');
         const albumCover = document.getElementById('albumCover');
         const songInfo = document.getElementById('songInfo');
         const songTitle = document.getElementById('songTitle');
@@ -143,77 +136,220 @@
         const revealBtn = document.getElementById('revealBtn');
         const revealIcon = document.getElementById('revealIcon');
         const statusLabel = document.getElementById('statusLabel');
+        const playIcon = document.getElementById('playIcon');
 
-        window.onload = () => {
+        window.onload = async () => {
             document.getElementById('clientIdInput').value = clientId;
-            loadRandomSongFromAPI();
+            document.getElementById('playlistInput').value = 'https://open.spotify.com/playlist/' + playlistId;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            if (code) {
+                await fetchAccessToken(code);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            if (accessToken) {
+                statusLabel.innerText = "¡Conectado! Cargando playlist...";
+                loadNextTrack();
+            } else {
+                toggleConfigModal();
+            }
         };
 
         function toggleConfigModal() {
             document.getElementById('configModal').classList.toggle('hidden');
         }
 
-        function saveSettings() {
-            clientId = document.getElementById('clientIdInput').value.trim();
-            localStorage.setItem('spotify_client_id', clientId);
-            toggleConfigModal();
-            loadRandomSongFromAPI();
+        function extractPlaylistId(text) {
+            const match = text.match(/playlist\/([A-Za-z0-9]+)/);
+            if (match) return match[1];
+            return text.trim().match(/^[A-Za-z0-9]{15,}$/) ? text.trim() : null;
         }
 
-        async function loadRandomSongFromAPI() {
-            hideSongDetails();
-            statusLabel.innerText = "Cargando canción aleatoria...";
+        function generateRandomString(length) {
+            let text = '';
+            const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            for (let i = 0; i < length; i++) {
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            }
+            return text;
+        }
 
-            // Lista robusta de canciones reales de alta calidad con previsualización directa y sin bloqueos CORS
-            const fallbackTracks = [
-                {
-                    title: "Sweet Child O' Mine",
-                    artist: "Guns N' Roses",
-                    year: "1987",
-                    cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-                    preview: "https://p.scdn.co/mp3-preview/720d2912534a787cd529ef99f44101e49d68249b?cid=9429d2ad7da54a9a9842a24f7a94c509"
-                },
-                {
-                    title: "Billie Jean",
-                    artist: "Michael Jackson",
-                    year: "1982",
-                    cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80",
-                    preview: "https://p.scdn.co/mp3-preview/388f8d68d4a944203faee005ffce9cfcc2a159f8?cid=9429d2ad7da54a9a9842a24f7a94c509"
-                },
-                {
-                    title: "Smells Like Teen Spirit",
-                    artist: "Nirvana",
-                    year: "1991",
-                    cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=600&q=80",
-                    preview: "https://p.scdn.co/mp3-preview/513fa1f0c239423c5f1cdbaf15309d9494372998?cid=9429d2ad7da54a9a9842a24f7a94c509"
-                },
-                {
-                    title: "Don't Stop Me Now",
-                    artist: "Queen",
-                    year: "1978",
-                    cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80",
-                    preview: "https://p.scdn.co/mp3-preview/123a105260123533cb9208a68bdf452dc829cb53?cid=9429d2ad7da54a9a9842a24f7a94c509"
-                },
-                {
-                    title: "Wake Me Up",
-                    artist: "Avicii",
-                    year: "2013",
-                    cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80",
-                    preview: "https://p.scdn.co/mp3-preview/d88bc5392cf99a19c72e2d833959bc2d083bc7ea?cid=9429d2ad7da54a9a9842a24f7a94c509"
+        async function generateCodeChallenge(codeVerifier) {
+            const data = new TextEncoder().encode(codeVerifier);
+            const digest = await window.crypto.subtle.digest('SHA-256', data);
+            return btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        async function redirectToSpotifyAuth() {
+            clientId = document.getElementById('clientIdInput').value.trim();
+            if (!clientId) {
+                alert("Por favor, introduce tu Client ID.");
+                return;
+            }
+            localStorage.setItem('spotify_client_id', clientId);
+
+            const newId = extractPlaylistId(document.getElementById('playlistInput').value);
+            if (newId) {
+                playlistId = newId;
+                localStorage.setItem('spotify_playlist_id', playlistId);
+            }
+
+            const verifier = generateRandomString(128);
+            localStorage.setItem('code_verifier', verifier);
+
+            const challenge = await generateCodeChallenge(verifier);
+            const redirectUri = window.location.origin + window.location.pathname;
+
+            const args = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientId,
+                scope: 'playlist-read-private playlist-read-collaborative user-modify-playback-state user-read-playback-state',
+                redirect_uri: redirectUri,
+                code_challenge_method: 'S256',
+                code_challenge: challenge
+            });
+
+            window.location.href = 'https://accounts.spotify.com/authorize?' + args.toString();
+        }
+
+        async function fetchAccessToken(code) {
+            const verifier = localStorage.getItem('code_verifier');
+            const redirectUri = window.location.origin + window.location.pathname;
+
+            const params = new URLSearchParams({
+                client_id: clientId,
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: redirectUri,
+                code_verifier: verifier
+            });
+
+            try {
+                const response = await fetch('https://accounts.spotify.com/api/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+
+                const data = await response.json();
+                if (data.access_token) {
+                    accessToken = data.access_token;
+                    localStorage.setItem(TOKEN_KEY, accessToken);
+                } else {
+                    console.error("Respuesta de token:", data);
                 }
-            ];
+            } catch (err) {
+                console.error("Error token:", err);
+            }
+        }
 
-            const randomIndex = Math.floor(Math.random() * fallbackTracks.length);
-            currentTrack = fallbackTracks[randomIndex];
+        function sessionExpired() {
+            localStorage.removeItem(TOKEN_KEY);
+            accessToken = null;
+            statusLabel.innerText = "La sesión ha caducado. Vuelve a conectar.";
+            toggleConfigModal();
+        }
 
-            nativeAudio.src = currentTrack.preview;
+        async function loadPlaylistTracks() {
+            statusLabel.innerText = "Cargando canciones de la playlist...";
+            let all = [];
+            let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+
+            while (url) {
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+
+                if (res.status === 401) { sessionExpired(); return false; }
+                if (!res.ok) {
+                    console.error("Error playlist:", res.status, await res.text());
+                    statusLabel.innerText = `No se pudo leer la playlist (error ${res.status}). Prueba a copiarla a tu cuenta.`;
+                    return false;
+                }
+
+                const data = await res.json();
+                all = all.concat(
+                    data.items.map(i => i.track).filter(t => t && t.uri && !t.is_local)
+                );
+                url = data.next;
+            }
+
+            playlistTracksCache = all;
+            return all.length > 0;
+        }
+
+        async function playOnSpotify(uri) {
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/player/play', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ uris: [uri] })
+                });
+
+                if (res.status === 401) { sessionExpired(); return; }
+                if (res.status === 404) {
+                    statusLabel.innerText = "Abre Spotify en algún dispositivo, pon algo un segundo y vuelve a probar.";
+                    return;
+                }
+                if (res.status === 403) {
+                    statusLabel.innerText = "Hace falta Spotify Premium para controlar la reproducción.";
+                    return;
+                }
+
+                isPlaying = true;
+                playIcon.className = 'fa-solid fa-pause';
+                statusLabel.innerText = "¡Suena en tu Spotify! ¿Qué canción es?";
+            } catch (err) {
+                console.error(err);
+                statusLabel.innerText = "Error al reproducir.";
+            }
+        }
+
+        async function togglePlayback() {
+            const action = isPlaying ? 'pause' : 'play';
+            const res = await fetch(`https://api.spotify.com/v1/me/player/${action}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (res.status === 401) { sessionExpired(); return; }
+            if (res.ok || res.status === 204) {
+                isPlaying = !isPlaying;
+                playIcon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+            }
+        }
+
+        async function loadNextTrack() {
+            if (!accessToken) { toggleConfigModal(); return; }
+
+            if (playlistTracksCache.length === 0) {
+                const ok = await loadPlaylistTracks();
+                if (!ok) return;
+            }
+
+            const selected = playlistTracksCache[Math.floor(Math.random() * playlistTracksCache.length)];
+
+            currentTrack = {
+                title: selected.name,
+                artist: selected.artists.map(a => a.name).join(', '),
+                year: selected.album.release_date ? selected.album.release_date.split('-')[0] : 'N/A',
+                cover: selected.album.images[0]?.url || '',
+                uri: selected.uri
+            };
+
+            hideSongDetails();
             albumCover.src = currentTrack.cover;
             songTitle.innerText = currentTrack.title;
             artistName.innerText = currentTrack.artist;
             releaseYear.innerText = "Año: " + currentTrack.year;
-            
-            nativeAudio.load();
-            statusLabel.innerText = "¡Canción aleatoria lista para jugar!";
+
+            await playOnSpotify(currentTrack.uri);
         }
 
         function revealSongDetails() {
