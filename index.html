@@ -19,7 +19,6 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Blur reveal effect */
         .blur-hidden {
             filter: blur(20px);
             opacity: 0.2;
@@ -34,24 +33,6 @@
             transform: scale(1);
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        /* Pulse animation for equalizer */
-        @keyframes sound-wave {
-            0%, 100% { height: 6px; }
-            50% { height: 28px; }
-        }
-        
-        .bar {
-            width: 4px;
-            background-color: #1DB954;
-            border-radius: 2px;
-            animation: sound-wave 1.2s ease-in-out infinite;
-        }
-        .bar:nth-child(1) { animation-delay: 0.1s; }
-        .bar:nth-child(2) { animation-delay: 0.4s; }
-        .bar:nth-child(3) { animation-delay: 0.2s; }
-        .bar:nth-child(4) { animation-delay: 0.5s; }
-        .bar:nth-child(5) { animation-delay: 0.3s; }
     </style>
 </head>
 <body class="h-full flex justify-center items-center p-2 sm:p-4 bg-slate-950 select-none overflow-hidden">
@@ -59,142 +40,75 @@
     <!-- Mobile Frame Outer Container -->
     <div class="relative w-full max-w-md h-[92vh] max-h-[850px] bg-slate-900 border border-slate-800 rounded-[40px] shadow-2xl flex flex-col justify-between overflow-hidden">
         
-        <!-- Top Status Bar & Config Button -->
+        <!-- Top Status Bar -->
         <header class="p-5 flex justify-between items-center z-20">
             <div class="flex items-center gap-2">
                 <i class="fa-brands fa-spotify text-emerald-500 text-2xl"></i>
                 <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Secret Player</span>
             </div>
-            
-            <button id="configBtn" onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
-                <i class="fa-solid fa-gear"></i>
-            </button>
         </header>
 
-        <!-- Main Display Screen (Minimalist UI) -->
+        <!-- Main Display Screen -->
         <main class="flex-1 flex flex-col items-center justify-center px-6 relative">
             
-            <!-- Dynamic Background Glow -->
-            <div id="glowBg" class="absolute w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl transition-all duration-700 pointer-events-none"></div>
-
             <!-- Mystery Artwork / Hidden Card -->
-            <div class="relative w-64 h-64 sm:w-72 sm:h-72 mb-8 rounded-3xl bg-slate-800 border border-slate-700/50 shadow-2xl overflow-hidden flex items-center justify-center">
-                
-                <!-- Secret Image -->
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 mb-6 rounded-3xl bg-slate-800 border border-slate-700/50 shadow-2xl overflow-hidden flex items-center justify-center">
                 <img id="albumCover" class="w-full h-full object-cover blur-hidden" src="" alt="Album Cover">
-                
-                <!-- Mystery Overlay Icon (shown when hidden) -->
                 <div id="mysteryOverlay" class="absolute flex flex-col items-center justify-center text-slate-600 transition-opacity duration-300">
                     <i class="fa-solid fa-compact-disc text-7xl animate-spin" style="animation-duration: 12s;"></i>
                     <p class="text-xs font-semibold mt-4 tracking-widest uppercase text-slate-500">¿Qué canción es?</p>
                 </div>
             </div>
 
-            <!-- Equalizer Visualizer (Playing state) -->
-            <div id="soundBars" class="h-8 flex items-center justify-center gap-1.5 mb-4 opacity-0 transition-opacity duration-300">
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
+            <!-- Native Audio Player for iOS Safari Compatibility -->
+            <div class="w-full max-w-xs mb-4">
+                <audio id="nativeAudio" controls class="w-full rounded-xl accent-emerald-500"></audio>
             </div>
 
             <!-- Reveal Info Container -->
-            <div id="songInfo" class="text-center w-full min-h-[90px] flex flex-col justify-center blur-hidden transition-all duration-500">
-                <h1 id="songTitle" class="text-xl sm:text-2xl font-extrabold text-white truncate px-2">Título de la Canción</h1>
-                <p id="artistName" class="text-base font-semibold text-emerald-400 mt-1 truncate">Nombre del Grupo / Artista</p>
-                <p id="releaseYear" class="text-xs font-medium text-slate-400 mt-1 tracking-widest uppercase">Año de Lanzamiento</p>
+            <div id="songInfo" class="text-center w-full min-h-[80px] flex flex-col justify-center blur-hidden transition-all duration-500">
+                <h1 id="songTitle" class="text-xl sm:text-2xl font-extrabold text-white truncate px-2">Título</h1>
+                <p id="artistName" class="text-base font-semibold text-emerald-400 mt-1 truncate">Artista</p>
+                <p id="releaseYear" class="text-xs font-medium text-slate-400 mt-1 tracking-widest uppercase">Año</p>
             </div>
             
         </main>
 
-        <!-- Minimalist Controls Bar -->
+        <!-- Controls Bar -->
         <footer class="p-6 pb-8 flex flex-col items-center gap-4 bg-slate-900/80 backdrop-blur-md border-t border-slate-800/80 z-10">
-            
-            <!-- Controls Row: Play/Pause & Reveal -->
             <div class="w-full flex items-center justify-around max-w-xs">
                 
                 <!-- Next Random Song -->
-                <button id="nextBtn" onclick="loadNextRandomTrack()" class="w-14 h-14 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
-                    <i class="fa-solid fa-shuffle text-lg"></i>
-                </button>
-
-                <!-- Main Play / Pause Button -->
-                <button id="playBtn" onclick="togglePlay()" class="w-20 h-20 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center hover:bg-emerald-400 transition transform active:scale-90 shadow-lg shadow-emerald-500/20">
-                    <i id="playIcon" class="fa-solid fa-play text-2xl ml-1"></i>
+                <button onclick="loadNextTrack()" class="w-16 h-16 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
+                    <i class="fa-solid fa-shuffle text-xl"></i>
                 </button>
 
                 <!-- Reveal Button -->
-                <button id="revealBtn" onclick="revealSongDetails()" class="w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition active:scale-95 shadow-md shadow-indigo-600/30">
-                    <i id="revealIcon" class="fa-solid fa-eye text-lg"></i>
+                <button id="revealBtn" onclick="revealSongDetails()" class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition active:scale-95 shadow-md shadow-indigo-600/30">
+                    <i id="revealIcon" class="fa-solid fa-eye text-xl"></i>
                 </button>
 
             </div>
-
-            <!-- Minimalist Action Label -->
-            <span id="statusLabel" class="text-xs text-slate-500 font-medium">Pulsa ▶ para empezar la música</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Usa los controles del reproductor para escuchar</span>
         </footer>
 
     </div>
 
-    <!-- Configuration Modal (For Spotify API Key & Mode) -->
-    <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl relative text-left">
-            <button onclick="toggleConfigModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            
-            <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
-                <i class="fa-brands fa-spotify text-emerald-500"></i> Configuración Spotify
-            </h2>
-            <p class="text-xs text-slate-400 mb-6">
-                El modo demostración utiliza canciones de prueba estables preparadas para funcionar al instante en cualquier dispositivo.
-            </p>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Modo de Funcionamiento</label>
-                    <select id="modeSelect" onchange="handleModeChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
-                        <option value="demo">Modo Demostración (Recomendado para iPad)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="saveSettings()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition">
-                    Guardar y Aplicar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hidden Audio Tag for Audio Playback -->
-    <audio id="audioPlayer" preload="auto"></audio>
-
-    <!-- App Logic -->
     <script>
-        // Default Demo Tracks Catalog with direct reliable audio samples
         const demoTracks = [
             {
                 title: "Bohemian Rhapsody",
                 artist: "Queen",
                 year: "1975",
                 cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-                preview: "https://p.scdn.co/mp3-preview/3b123456789abcdef0123456789abcdef0123456?cid=774b29d4f13844c495f2061dad9c1333"
+                preview: "https://actions.google.com/sounds/v1/music/acoustic_guitar.ogg"
             },
             {
                 title: "Billie Jean",
                 artist: "Michael Jackson",
                 year: "1982",
                 cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80",
-                preview: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" // Reliable audio stream fallback
-            },
-            {
-                title: "Smells Like Teen Spirit",
-                artist: "Nirvana",
-                year: "1991",
-                cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=600&q=80",
-                preview: "https://actions.google.com/sounds/v1/music/acoustic_guitar.ogg"
+                preview: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg"
             },
             {
                 title: "Blinding Lights",
@@ -205,122 +119,37 @@
             }
         ];
 
-        // State Variables
         let currentTrack = null;
-        let isPlaying = false;
         let isRevealed = false;
 
-        // Elements
-        const audioPlayer = document.getElementById('audioPlayer');
-        const playBtn = document.getElementById('playBtn');
-        const playIcon = document.getElementById('playIcon');
-        const revealBtn = document.getElementById('revealBtn');
-        const revealIcon = document.getElementById('revealIcon');
+        const nativeAudio = document.getElementById('nativeAudio');
         const albumCover = document.getElementById('albumCover');
         const songInfo = document.getElementById('songInfo');
         const songTitle = document.getElementById('songTitle');
         const artistName = document.getElementById('artistName');
         const releaseYear = document.getElementById('releaseYear');
         const mysteryOverlay = document.getElementById('mysteryOverlay');
-        const soundBars = document.getElementById('soundBars');
+        const revealBtn = document.getElementById('revealBtn');
+        const revealIcon = document.getElementById('revealIcon');
         const statusLabel = document.getElementById('statusLabel');
-        const glowBg = document.getElementById('glowBg');
 
-        // Initial setup
         window.onload = () => {
-            audioPlayer.volume = 1.0;
-
-            // Handle Audio End Event
-            audioPlayer.onended = () => {
-                setPlayingState(false);
-                statusLabel.innerText = "Canción finalizada. Pulsa siguiente o desvelar.";
-            };
-
-            audioPlayer.onerror = (e) => {
-                console.error("Error al cargar el audio:", e);
-                setPlayingState(false);
-                statusLabel.innerText = "Error cargando audio. Prueba la siguiente.";
-            };
-
-            loadNextRandomTrack();
+            loadNextTrack();
         };
 
-        function toggleConfigModal() {
-            document.getElementById('configModal').classList.toggle('hidden');
-        }
-
-        function handleModeChange() {}
-
-        function saveSettings() {
-            toggleConfigModal();
-            loadNextRandomTrack();
-        }
-
-        function getRandomTrack() {
-            const randomIndex = Math.floor(Math.random() * demoTracks.length);
-            return demoTracks[randomIndex];
-        }
-
-        function loadNextRandomTrack() {
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            setPlayingState(false);
-            
+        function loadNextTrack() {
             hideSongDetails();
-            statusLabel.innerText = "Cargando canción aleatoria...";
+            const randomIndex = Math.floor(Math.random() * demoTracks.length);
+            currentTrack = demoTracks[randomIndex];
 
-            currentTrack = getRandomTrack();
-
-            if (currentTrack && currentTrack.preview) {
-                audioPlayer.src = currentTrack.preview;
-                audioPlayer.load();
-                albumCover.src = currentTrack.cover;
-                songTitle.innerText = currentTrack.title;
-                artistName.innerText = currentTrack.artist;
-                releaseYear.innerText = "Año: " + currentTrack.year;
-                statusLabel.innerText = "¡Canción lista! Pulsa ▶ para escuchar.";
-            } else {
-                statusLabel.innerText = "Sin vista previa disponible.";
-            }
-        }
-
-        function togglePlay() {
-            if (!currentTrack || !currentTrack.preview) {
-                loadNextRandomTrack();
-                return;
-            }
-
-            if (isPlaying) {
-                audioPlayer.pause();
-                setPlayingState(false);
-            } else {
-                // Play wrapped in promise to handle iOS Safari restrictions gracefully
-                audioPlayer.play().then(() => {
-                    setPlayingState(true);
-                }).catch(err => {
-                    console.warn("Reproducción bloqueada por el navegador:", err);
-                    statusLabel.innerText = "Toca otra vez el botón ▶ para permitir audio.";
-                    setPlayingState(false);
-                });
-            }
-        }
-
-        function setPlayingState(playing) {
-            isPlaying = playing;
-            if (playing) {
-                playIcon.classList.remove('fa-play');
-                playIcon.classList.add('fa-pause');
-                soundBars.classList.remove('opacity-0');
-                glowBg.classList.add('scale-125', 'bg-emerald-500/20');
-                if (!isRevealed) {
-                    statusLabel.innerText = "Reproduciendo... ¿Cuál es?";
-                }
-            } else {
-                playIcon.classList.remove('fa-pause');
-                playIcon.classList.add('fa-play');
-                soundBars.classList.add('opacity-0');
-                glowBg.classList.remove('scale-125', 'bg-emerald-500/20');
-            }
+            nativeAudio.src = currentTrack.preview;
+            albumCover.src = currentTrack.cover;
+            songTitle.innerText = currentTrack.title;
+            artistName.innerText = currentTrack.artist;
+            releaseYear.innerText = "Año: " + currentTrack.year;
+            
+            nativeAudio.load();
+            statusLabel.innerText = "Pulsa el play del reproductor para escuchar";
         }
 
         function revealSongDetails() {
@@ -329,33 +158,27 @@
 
             albumCover.classList.remove('blur-hidden');
             albumCover.classList.add('blur-visible');
-
             songInfo.classList.remove('blur-hidden');
             songInfo.classList.add('blur-visible');
-
             mysteryOverlay.classList.add('opacity-0');
 
-            revealBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+            revealBtn.classList.remove('bg-indigo-600');
             revealBtn.classList.add('bg-slate-700', 'text-slate-400');
             revealIcon.classList.remove('fa-eye');
             revealIcon.classList.add('fa-eye-slash');
-
             statusLabel.innerText = "¡Canción desvelada!";
         }
 
         function hideSongDetails() {
             isRevealed = false;
-
             albumCover.classList.remove('blur-visible');
             albumCover.classList.add('blur-hidden');
-
             songInfo.classList.remove('blur-visible');
             songInfo.classList.add('blur-hidden');
-
             mysteryOverlay.classList.remove('opacity-0');
 
             revealBtn.classList.remove('bg-slate-700', 'text-slate-400');
-            revealBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-500');
+            revealBtn.classList.add('bg-indigo-600');
             revealIcon.classList.remove('fa-eye-slash');
             revealIcon.classList.add('fa-eye');
         }
