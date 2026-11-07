@@ -328,4 +328,32 @@
             if (isRevealed) return;
             isRevealed = true;
 
-            albumCover.
+            albumCover.classList.remove('blur-hidden');
+            albumCover.classList.add('blur-visible');
+            songInfo.classList.remove('blur-hidden');
+            songInfo.classList.add('blur-visible');
+            mysteryOverlay.classList.add('opacity-0');
+
+            revealBtn.classList.remove('bg-indigo-600');
+            revealBtn.classList.add('bg-slate-700', 'text-slate-400');
+            revealIcon.classList.remove('fa-eye');
+            revealIcon.classList.add('fa-eye-slash');
+            statusLabel.innerText = "¡Canción desvelada!";
+        }
+
+        function hideSongDetails() {
+            isRevealed = false;
+            albumCover.classList.remove('blur-visible');
+            albumCover.classList.add('blur-hidden');
+            songInfo.classList.remove('blur-visible');
+            songInfo.classList.add('blur-hidden');
+            mysteryOverlay.classList.remove('opacity-0');
+
+            revealBtn.classList.remove('bg-slate-700', 'text-slate-400');
+            revealBtn.classList.add('bg-indigo-600');
+            revealIcon.classList.remove('fa-eye-slash');
+            revealIcon.classList.add('fa-eye');
+        }
+    </script>
+</body>
+</html>
