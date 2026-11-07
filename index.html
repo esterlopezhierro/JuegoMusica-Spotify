@@ -71,8 +71,8 @@
 
         <footer class="p-6 pb-8 flex flex-col items-center gap-4 bg-slate-900/80 backdrop-blur-md border-t border-slate-800/80 z-10">
             <div class="w-full flex items-center justify-around max-w-xs">
-                <button onclick="loadNextTrack()" class="w-16 h-16 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
-                    <i class="fa-solid fa-shuffle text-xl"></i>
+                <button onclick="nextSong()" class="w-16 h-16 rounded-full bg-slate-800 text-slate-200 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 shadow-md">
+                    <i class="fa-solid fa-forward-step text-xl"></i>
                 </button>
                 <button id="revealBtn" onclick="revealSongDetails()" class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition active:scale-95 shadow-md shadow-indigo-600/30">
                     <i id="revealIcon" class="fa-solid fa-eye text-xl"></i>
@@ -94,18 +94,13 @@
                 <i class="fa-brands fa-spotify text-emerald-500"></i> Conectar con Spotify
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                Necesitas Spotify Premium, la app abierta en algún dispositivo y una playlist creada en tu cuenta.
+                Necesitas Spotify Premium. Antes de empezar, pon tu playlist en Spotify con el aleatorio activado y dale a play.
             </p>
 
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Spotify Client ID</label>
                     <input type="text" id="clientIdInput" placeholder="Pega tu Client ID aquí" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Enlace de la playlist</label>
-                    <input type="text" id="playlistInput" placeholder="https://open.spotify.com/playlist/..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
                 <button onclick="redirectToSpotifyAuth()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
@@ -116,16 +111,13 @@
     </div>
 
     <script>
-        const DEFAULT_PLAYLIST_ID = '20kxyNTykQPlbmt15fiPqY';
         const TOKEN_KEY = 'spotify_access_token_v2';
 
-        let currentTrack = null;
         let isRevealed = false;
         let isPlaying = true;
+        let lastTrackId = null;
         let accessToken = localStorage.getItem(TOKEN_KEY) || null;
         let clientId = localStorage.getItem('spotify_client_id') || '';
-        let playlistId = localStorage.getItem('spotify_playlist_id') || DEFAULT_PLAYLIST_ID;
-        let playlistTracksCache = [];
 
         const albumCover = document.getElementById('albumCover');
         const songInfo = document.getElementById('songInfo');
@@ -140,7 +132,6 @@
 
         window.onload = async () => {
             document.getElementById('clientIdInput').value = clientId;
-            document.getElementById('playlistInput').value = 'https://open.spotify.com/playlist/' + playlistId;
 
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
@@ -151,7 +142,9 @@
             }
 
             if (accessToken) {
-                statusLabel.innerText = "¡Conectado! Pulsa shuffle para empezar.";
+                statusLabel.innerText = "¡Conectado! Buscando lo que suena...";
+                await refreshNowPlaying(true);
+                setInterval(() => refreshNowPlaying(false), 3000);
             } else {
                 toggleConfigModal();
             }
@@ -159,12 +152,6 @@
 
         function toggleConfigModal() {
             document.getElementById('configModal').classList.toggle('hidden');
-        }
-
-        function extractPlaylistId(text) {
-            const match = text.match(/playlist\/([A-Za-z0-9]+)/);
-            if (match) return match[1];
-            return text.trim().match(/^[A-Za-z0-9]{15,}$/) ? text.trim() : null;
         }
 
         function generateRandomString(length) {
@@ -193,12 +180,6 @@
             }
             localStorage.setItem('spotify_client_id', clientId);
 
-            const newId = extractPlaylistId(document.getElementById('playlistInput').value);
-            if (newId) {
-                playlistId = newId;
-                localStorage.setItem('spotify_playlist_id', playlistId);
-            }
-
             const verifier = generateRandomString(128);
             localStorage.setItem('code_verifier', verifier);
 
@@ -208,7 +189,7 @@
             const args = new URLSearchParams({
                 response_type: 'code',
                 client_id: clientId,
-                scope: 'playlist-read-private playlist-read-collaborative user-modify-playback-state user-read-playback-state',
+                scope: 'user-modify-playback-state user-read-playback-state',
                 redirect_uri: redirectUri,
                 code_challenge_method: 'S256',
                 code_challenge: challenge
@@ -255,78 +236,67 @@
             toggleConfigModal();
         }
 
-        async function loadPlaylistTracks() {
-            statusLabel.innerText = "Cargando canciones de la playlist...";
-            let all = [];
-            let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=50`;
+        // Consulta qué está sonando y actualiza la pantalla si ha cambiado la canción
+        async function refreshNowPlaying(showMessages) {
+            if (!accessToken) return;
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/player', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
 
-            while (url) {
-                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                if (res.status === 401) { sessionExpired(); return; }
 
-                if (res.status === 401) { sessionExpired(); return false; }
+                if (res.status === 204) {
+                    if (showMessages) statusLabel.innerText = "No hay nada sonando. Abre Spotify y dale a play a tu playlist.";
+                    return;
+                }
                 if (!res.ok) {
-                    console.error("Error playlist:", res.status, await res.text());
-                    statusLabel.innerText = `No se pudo leer la playlist (error ${res.status}). Debe ser una playlist de tu cuenta.`;
-                    return false;
+                    if (showMessages) statusLabel.innerText = `Spotify respondió ${res.status} al consultar qué suena.`;
+                    return;
                 }
 
                 const data = await res.json();
-                all = all.concat(
-                    data.items
-                        .map(i => i.item || i.track)
-                        .filter(t => t && t.uri && !t.is_local && t.type !== 'episode')
-                );
-                url = data.next;
-            }
+                isPlaying = !!data.is_playing;
+                playIcon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
 
-            playlistTracksCache = all;
-            if (all.length === 0) statusLabel.innerText = "La playlist no tiene canciones.";
-            return all.length > 0;
+                const track = data.item;
+                if (!track || track.type === 'episode') return;
+
+                if (track.id !== lastTrackId) {
+                    lastTrackId = track.id;
+                    hideSongDetails();
+                    albumCover.src = track.album?.images?.[0]?.url || '';
+                    songTitle.innerText = track.name;
+                    artistName.innerText = (track.artists || []).map(a => a.name).join(', ');
+                    const date = track.album?.release_date;
+                    releaseYear.innerText = "Año: " + (date ? date.split('-')[0] : 'N/A');
+                    statusLabel.innerText = "¿Qué canción es? Pulsa el ojo para desvelarla.";
+                }
+            } catch (err) {
+                console.error(err);
+                if (showMessages) statusLabel.innerText = `Error: ${err.name} - ${err.message}`;
+            }
         }
 
-        async function playOnSpotify(uri) {
-            const auth = { 'Authorization': `Bearer ${accessToken}` };
-            let deviceParam = '';
-            let deviceName = '';
-
-            // 1) Buscar dispositivo (si falla, seguimos sin él)
+        async function nextSong() {
+            if (!accessToken) { toggleConfigModal(); return; }
+            statusLabel.innerText = "Pasando a la siguiente...";
             try {
-                const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', { headers: auth });
-                if (devRes.status === 401) { sessionExpired(); return; }
-                if (devRes.ok) {
-                    const devData = await devRes.json();
-                    const devices = devData.devices || [];
-                    if (devices.length === 0) {
-                        statusLabel.innerText = "Spotify no ve ningún dispositivo. Abre Spotify y pon una canción.";
-                        return;
-                    }
-                    const device = devices.find(d => d.is_active) || devices[0];
-                    deviceParam = `?device_id=${device.id}`;
-                    deviceName = device.name;
-                }
-            } catch (e) {
-                console.error("Error dispositivos:", e);
-            }
-
-            // 2) Mandar la canción
-            try {
-                const res = await fetch(`https://api.spotify.com/v1/me/player/play${deviceParam}`, {
-                    method: 'PUT',
-                    headers: { ...auth, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uris: [uri] })
+                const res = await fetch('https://api.spotify.com/v1/me/player/next', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
 
                 if (res.status === 401) { sessionExpired(); return; }
                 if (!res.ok) {
                     const txt = await res.text();
-                    console.error("Error play:", res.status, txt);
-                    statusLabel.innerText = `Spotify respondió ${res.status}${deviceName ? ' (' + deviceName + ')' : ''}: ${txt.slice(0, 120)}`;
+                    console.error("Error next:", res.status, txt);
+                    statusLabel.innerText = `Spotify respondió ${res.status}: ${txt.slice(0, 120)}`;
                     return;
                 }
 
-                isPlaying = true;
-                playIcon.className = 'fa-solid fa-pause';
-                statusLabel.innerText = `¡Suena en ${deviceName || 'tu Spotify'}! ¿Qué canción es?`;
+                // Spotify tarda un momento en cambiar de canción
+                setTimeout(() => refreshNowPlaying(true), 900);
             } catch (err) {
                 console.error(err);
                 statusLabel.innerText = `Error: ${err.name} - ${err.message}`;
@@ -334,75 +304,28 @@
         }
 
         async function togglePlayback() {
-            const action = isPlaying ? 'pause' : 'play';
-            const res = await fetch(`https://api.spotify.com/v1/me/player/${action}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-            if (res.status === 401) { sessionExpired(); return; }
-            if (res.ok || res.status === 204) {
-                isPlaying = !isPlaying;
-                playIcon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
-            }
-        }
-
-        async function loadNextTrack() {
             if (!accessToken) { toggleConfigModal(); return; }
-
-            if (playlistTracksCache.length === 0) {
-                const ok = await loadPlaylistTracks();
-                if (!ok) return;
+            const action = isPlaying ? 'pause' : 'play';
+            try {
+                const res = await fetch(`https://api.spotify.com/v1/me/player/${action}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (res.status === 401) { sessionExpired(); return; }
+                if (res.ok || res.status === 204) {
+                    isPlaying = !isPlaying;
+                    playIcon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+                } else {
+                    statusLabel.innerText = `Spotify respondió ${res.status} al pausar/reanudar.`;
+                }
+            } catch (err) {
+                console.error(err);
+                statusLabel.innerText = `Error: ${err.name} - ${err.message}`;
             }
-
-            const selected = playlistTracksCache[Math.floor(Math.random() * playlistTracksCache.length)];
-
-            currentTrack = {
-                title: selected.name,
-                artist: selected.artists.map(a => a.name).join(', '),
-                year: selected.album.release_date ? selected.album.release_date.split('-')[0] : 'N/A',
-                cover: selected.album.images[0]?.url || '',
-                uri: selected.uri
-            };
-
-            hideSongDetails();
-            albumCover.src = currentTrack.cover;
-            songTitle.innerText = currentTrack.title;
-            artistName.innerText = currentTrack.artist;
-            releaseYear.innerText = "Año: " + currentTrack.year;
-
-            await playOnSpotify(currentTrack.uri);
         }
 
         function revealSongDetails() {
             if (isRevealed) return;
             isRevealed = true;
 
-            albumCover.classList.remove('blur-hidden');
-            albumCover.classList.add('blur-visible');
-            songInfo.classList.remove('blur-hidden');
-            songInfo.classList.add('blur-visible');
-            mysteryOverlay.classList.add('opacity-0');
-
-            revealBtn.classList.remove('bg-indigo-600');
-            revealBtn.classList.add('bg-slate-700', 'text-slate-400');
-            revealIcon.classList.remove('fa-eye');
-            revealIcon.classList.add('fa-eye-slash');
-            statusLabel.innerText = "¡Canción desvelada!";
-        }
-
-        function hideSongDetails() {
-            isRevealed = false;
-            albumCover.classList.remove('blur-visible');
-            albumCover.classList.add('blur-hidden');
-            songInfo.classList.remove('blur-visible');
-            songInfo.classList.add('blur-hidden');
-            mysteryOverlay.classList.remove('opacity-0');
-
-            revealBtn.classList.remove('bg-slate-700', 'text-slate-400');
-            revealBtn.classList.add('bg-indigo-600');
-            revealIcon.classList.remove('fa-eye-slash');
-            revealIcon.classList.add('fa-eye');
-        }
-    </script>
-</body>
-</html>
+            albumCover.
