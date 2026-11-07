@@ -44,7 +44,7 @@
         <header class="p-5 flex justify-between items-center z-20">
             <div class="flex items-center gap-2">
                 <i class="fa-brands fa-spotify text-emerald-500 text-2xl"></i>
-                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Mis Favoritas</span>
+                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Canciones que te gustan</span>
             </div>
             
             <button id="configBtn" onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
@@ -64,7 +64,7 @@
                 </div>
             </div>
 
-            <!-- Native Audio Player -->
+            <!-- Native Audio Player (Sin límite de tiempo) -->
             <div class="w-full max-w-xs mb-4">
                 <audio id="nativeAudio" controls class="w-full rounded-xl accent-emerald-500"></audio>
             </div>
@@ -93,7 +93,7 @@
                 </button>
 
             </div>
-            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Pulsa ⚙️ para conectar tu Spotify</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Conecta tu Spotify en ⚙️</span>
         </footer>
 
     </div>
@@ -106,10 +106,10 @@
             </button>
             
             <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
-                <i class="fa-brands fa-spotify text-emerald-500"></i> Canciones Que Me Gustan
+                <i class="fa-brands fa-spotify text-emerald-500"></i> Sincronizar Playlist
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                Conecta tu cuenta para cargar tu playlist real de favoritos de Spotify.
+                Introduce tu Client ID para buscar y leer tu playlist exacta <b>"Canciones que te gustan"</b>.
             </p>
 
             <div class="space-y-4">
@@ -129,7 +129,8 @@
         let currentTrack = null;
         let isRevealed = false;
         let accessToken = localStorage.getItem('spotify_access_token') || null;
-        let clientId = localStorage.getItem('spotify_client_id') || '9429d2ad7da54a9a9842a24f7a94c509';
+        let clientId = localStorage.getItem('spotify_client_id'] || '';
+        let playlistTracksCache = [];
 
         const nativeAudio = document.getElementById('nativeAudio');
         const albumCover = document.getElementById('albumCover');
@@ -154,8 +155,8 @@
             }
 
             if (accessToken) {
-                statusLabel.innerText = "¡Conectado a tus 'Canciones que me gustan'!";
-                loadNextTrack();
+                statusLabel.innerText = "¡Conectado! Buscando tu playlist...";
+                loadPlaylistAndTrack();
             } else {
                 toggleConfigModal();
             }
@@ -165,7 +166,6 @@
             document.getElementById('configModal').classList.toggle('hidden');
         }
 
-        // Generadores PKCE para autenticación segura en Spotify
         function generateRandomString(length) {
             let text = '';
             const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -177,7 +177,7 @@
 
         async function generateCodeChallenge(codeVerifier) {
             const data = new TextEncoder().encode(codeVerifier);
-            const digest = await window.crypto.subcrypto ? window.crypto.subcrypto.digest('SHA-256', data) : await window.crypto.subtle.digest('SHA-256', data);
+            const digest = await window.crypto.subtle.digest('SHA-256', data);
             return btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')
@@ -201,7 +201,7 @@
             const args = new URLSearchParams({
                 response_type: 'code',
                 client_id: clientId,
-                scope: 'user-library-read',
+                scope: 'playlist-read-private playlist-read-collaborative',
                 redirect_uri: redirectUri,
                 code_challenge_method: 'S256',
                 code_challenge: challenge
@@ -235,74 +235,100 @@
                     localStorage.setItem('spotify_access_token', accessToken);
                 }
             } catch (err) {
-                console.error("Error obteniendo token:", err);
+                console.error("Error token:", err);
             }
         }
 
-        async function loadNextTrack() {
-            if (!accessToken) {
-                toggleConfigModal();
-                return;
-            }
-
+        async function loadPlaylistAndTrack() {
             hideSongDetails();
-            statusLabel.innerText = "Cargando canción de tus me gusta...";
+            statusLabel.innerText = "Buscando playlist 'Canciones que te gustan'...";
 
             try {
-                // Obtener total de canciones en "Canciones que me gustan"
-                const countRes = await fetch('https://api.spotify.com/v1/me/tracks?limit=1', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
+                if (playlistTracksCache.length === 0) {
+                    // Buscar las playlists del usuario
+                    const playlistsRes = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
 
-                if (countRes.status === 401) {
-                    localStorage.removeItem('spotify_access_token');
-                    accessToken = null;
-                    statusLabel.innerText = "Sesión caducada. Conecta de nuevo.";
-                    toggleConfigModal();
-                    return;
-                }
-
-                const countData = await countRes.json();
-                const totalTracks = countData.total || 0;
-
-                if (totalTracks === 0) {
-                    statusLabel.innerText = "No tienes canciones guardadas en tus 'Me gusta'.";
-                    return;
-                }
-
-                // Elegir un número al azar de tus me gusta
-                const randomOffset = Math.floor(Math.random() * totalTracks);
-                const trackRes = await fetch(`https://api.spotify.com/v1/me/tracks?limit=1&offset=${randomOffset}`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const trackData = await trackRes.json();
-                const item = trackData.items[0]?.track;
-
-                if (item) {
-                    currentTrack = {
-                        title: item.name,
-                        artist: item.artists.map(a => a.name).join(', '),
-                        year: item.album.release_date ? item.album.release_date.split('-')[0] : 'N/A',
-                        cover: item.album.images[0]?.url || '',
-                        preview: item.preview_url
-                    };
-
-                    if (currentTrack.preview) {
-                        nativeAudio.src = currentTrack.preview;
-                        albumCover.src = currentTrack.cover;
-                        songTitle.innerText = currentTrack.title;
-                        artistName.innerText = currentTrack.artist;
-                        releaseYear.innerText = "Año: " + currentTrack.year;
-                        nativeAudio.load();
-                        statusLabel.innerText = "¡Canción de tus favoritos lista!";
-                    } else {
-                        // Si justo esa pista no tiene preview web, salta automáticamente a otra de tu lista
-                        loadNextTrack();
+                    if (playlistsRes.status === 401) {
+                        localStorage.removeItem('spotify_access_token');
+                        accessToken = null;
+                        toggleConfigModal();
+                        return;
                     }
+
+                    const playlistsData = await playlistsRes.json();
+                    // Encontrar la playlist que se llame exactamente "Canciones que te gustan"
+                    const targetPlaylist = playlistsData.items?.find(p => p.name.toLowerCase() === "canciones que te gustan".toLowerCase());
+
+                    if (!targetPlaylist) {
+                        statusLabel.innerText = "No se encontró la playlist 'Canciones que te gustan'.";
+                        return;
+                    }
+
+                    // Obtener las canciones de esa playlist específica
+                    const tracksRes = await fetch(`https://api.spotify.com/v1/playlists/${targetPlaylist.id}/tracks?limit=100`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
+                    const tracksData = await tracksRes.json();
+                    
+                    playlistTracksCache = tracksData.items.map(item => item.track).filter(t => t && t.preview_url);
                 }
+
+                if (playlistTracksCache.length === 0) {
+                    statusLabel.innerText = "La playlist no tiene canciones con vista previa disponible.";
+                    return;
+                }
+
+                // Seleccionar una al azar de tu playlist real
+                const randomIndex = Math.floor(Math.random() * playlistTracksCache.length);
+                const selected = playlistTracksCache[randomIndex];
+
+                currentTrack = {
+                    title: selected.name,
+                    artist: selected.artists.map(a => a.name).join(', '),
+                    year: selected.album.release_date ? selected.album.release_date.split('-')[0] : 'N/A',
+                    cover: selected.album.images[0]?.url || '',
+                    preview: selected.preview_url
+                };
+
+                nativeAudio.src = currentTrack.preview;
+                albumCover.src = currentTrack.cover;
+                songTitle.innerText = currentTrack.title;
+                artistName.innerText = currentTrack.artist;
+                releaseYear.innerText = "Año: " + currentTrack.year;
+                nativeAudio.load();
+                statusLabel.innerText = "¡Canción lista de tu playlist!";
+
             } catch (err) {
                 console.error(err);
-                statusLabel.innerText = "Error cargando favoritos.";
+                statusLabel.innerText = "Error cargando la playlist.";
+            }
+        }
+
+        function loadNextTrack() {
+            if (playlistTracksCache.length > 0) {
+                const randomIndex = Math.floor(Math.random() * playlistTracksCache.length);
+                const selected = playlistTracksCache[randomIndex];
+
+                currentTrack = {
+                    title: selected.name,
+                    artist: selected.artists.map(a => a.name).join(', '),
+                    year: selected.album.release_date ? selected.album.release_date.split('-')[0] : 'N/A',
+                    cover: selected.album.images[0]?.url || '',
+                    preview: selected.preview_url
+                };
+
+                hideSongDetails();
+                nativeAudio.src = currentTrack.preview;
+                albumCover.src = currentTrack.cover;
+                songTitle.innerText = currentTrack.title;
+                artistName.innerText = currentTrack.artist;
+                releaseYear.innerText = "Año: " + currentTrack.year;
+                nativeAudio.load();
+                statusLabel.innerText = "¡Siguiente canción aleatoria!";
+            } else {
+                loadPlaylistAndTrack();
             }
         }
 
