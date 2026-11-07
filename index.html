@@ -47,7 +47,7 @@
                 <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Canciones que te gustan</span>
             </div>
             
-            <button id="configBtn" onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
+            <button id="configBtn" onclick="toggleConfigModal()" class="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 cursor-pointer">
                 <i class="fa-solid fa-gear"></i>
             </button>
         </header>
@@ -93,7 +93,7 @@
                 </button>
 
             </div>
-            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Conecta tu Spotify en ⚙️</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Pulsa ⚙️ para conectar tu Spotify</span>
         </footer>
 
     </div>
@@ -129,7 +129,7 @@
         let currentTrack = null;
         let isRevealed = false;
         let accessToken = localStorage.getItem('spotify_access_token') || null;
-        let clientId = localStorage.getItem('spotify_client_id'] || '';
+        let clientId = localStorage.getItem('spotify_client_id') || '';
         let playlistTracksCache = [];
 
         const nativeAudio = document.getElementById('nativeAudio');
@@ -245,7 +245,6 @@
 
             try {
                 if (playlistTracksCache.length === 0) {
-                    // Buscar las playlists del usuario
                     const playlistsRes = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     });
@@ -258,7 +257,6 @@
                     }
 
                     const playlistsData = await playlistsRes.json();
-                    // Encontrar la playlist que se llame exactamente "Canciones que te gustan"
                     const targetPlaylist = playlistsData.items?.find(p => p.name.toLowerCase() === "canciones que te gustan".toLowerCase());
 
                     if (!targetPlaylist) {
@@ -266,7 +264,6 @@
                         return;
                     }
 
-                    // Obtener las canciones de esa playlist específica
                     const tracksRes = await fetch(`https://api.spotify.com/v1/playlists/${targetPlaylist.id}/tracks?limit=100`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     });
@@ -280,7 +277,6 @@
                     return;
                 }
 
-                // Seleccionar una al azar de tu playlist real
                 const randomIndex = Math.floor(Math.random() * playlistTracksCache.length);
                 const selected = playlistTracksCache[randomIndex];
 
