@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <!-- Native Audio Player for iOS Safari Compatibility -->
+            <!-- Native Audio Player -->
             <div class="w-full max-w-xs mb-4">
                 <audio id="nativeAudio" controls class="w-full rounded-xl accent-emerald-500"></audio>
             </div>
@@ -89,33 +89,34 @@
                 </button>
 
             </div>
-            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Usa los controles del reproductor para escuchar</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Usa los controles del reproductor</span>
         </footer>
 
     </div>
 
     <script>
+        // Catálogo con muestras musicales reales y limpias
         const demoTracks = [
             {
-                title: "Bohemian Rhapsody",
-                artist: "Queen",
-                year: "1975",
+                title: "Classic Rock Groove",
+                artist: "Demo Band",
+                year: "1985",
                 cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-                preview: "https://actions.google.com/sounds/v1/music/acoustic_guitar.ogg"
+                preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
             },
             {
-                title: "Billie Jean",
-                artist: "Michael Jackson",
-                year: "1982",
+                title: "Synthwave Night",
+                artist: "Retro Wave",
+                year: "1988",
                 cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80",
-                preview: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg"
+                preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
             },
             {
-                title: "Blinding Lights",
-                artist: "The Weeknd",
-                year: "2020",
-                cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80",
-                preview: "https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg"
+                title: "Acoustic Morning",
+                artist: "Unplugged",
+                year: "1995",
+                cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=600&q=80",
+                preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
             }
         ];
 
@@ -149,7 +150,7 @@
             releaseYear.innerText = "Año: " + currentTrack.year;
             
             nativeAudio.load();
-            statusLabel.innerText = "Pulsa el play del reproductor para escuchar";
+            statusLabel.innerText = "¡Canción lista para reproducir!";
         }
 
         function revealSongDetails() {
