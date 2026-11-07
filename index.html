@@ -64,7 +64,7 @@
                 </div>
             </div>
 
-            <!-- Native Audio Player -->
+            <!-- Native Audio Player (Sin límite de tiempo para reproducción continua) -->
             <div class="w-full max-w-xs mb-4">
                 <audio id="nativeAudio" controls class="w-full rounded-xl accent-emerald-500"></audio>
             </div>
@@ -93,7 +93,7 @@
                 </button>
 
             </div>
-            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Usa los controles del reproductor</span>
+            <span id="statusLabel" class="text-xs text-slate-400 font-medium text-center">Reproducción libre sin límite de tiempo</span>
         </footer>
 
     </div>
@@ -109,7 +109,7 @@
                 <i class="fa-brands fa-spotify text-emerald-500"></i> Configuración Spotify
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                Selecciona Spotify API e introduce tu Client ID para buscar canciones en el catálogo oficial de Spotify.
+                Introduce tu Client ID de Spotify Developer para conectar la app al catálogo general y buscar temas al azar.
             </p>
 
             <div class="space-y-4">
@@ -117,7 +117,7 @@
                     <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Modo de Funcionamiento</label>
                     <select id="modeSelect" onchange="handleModeChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
                         <option value="demo">Modo Demostración</option>
-                        <option value="spotify">Spotify API Directo (Requiere Client ID)</option>
+                        <option value="spotify">Spotify API (Requiere Client ID)</option>
                     </select>
                 </div>
 
@@ -252,7 +252,7 @@
 
         async function loadNextTrack() {
             hideSongDetails();
-            statusLabel.innerText = "Cargando canción...";
+            statusLabel.innerText = "Cargando canción aleatoria...";
             currentTrack = await getRandomSpotifyTrack();
 
             if (currentTrack && currentTrack.preview) {
@@ -262,9 +262,10 @@
                 artistName.innerText = currentTrack.artist;
                 releaseYear.innerText = "Año: " + currentTrack.year;
                 nativeAudio.load();
-                statusLabel.innerText = "¡Canción lista para reproducir!";
+                statusLabel.innerText = "¡Canción lista! Reproducción sin límite.";
             } else {
-                statusLabel.innerText = "Sin vista previa disponible. Pulsa aleatorio de nuevo.";
+                statusLabel.innerText = "Buscando siguiente pista...";
+                loadNextTrack();
             }
         }
 
