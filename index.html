@@ -285,31 +285,34 @@
         }
 
         async function playOnSpotify(uri) {
-            const headers = {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            };
+            const auth = { 'Authorization': `Bearer ${accessToken}` };
+            let deviceParam = '';
+            let deviceName = '';
+
+            // 1) Buscar dispositivo (si falla, seguimos sin él)
             try {
-                // Buscar un dispositivo (si esta consulta falla, se intenta sin dispositivo)
-                let deviceParam = '';
-                let deviceName = '';
-                const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', { headers });
+                const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', { headers: auth });
                 if (devRes.status === 401) { sessionExpired(); return; }
                 if (devRes.ok) {
                     const devData = await devRes.json();
                     const devices = devData.devices || [];
                     if (devices.length === 0) {
-                        statusLabel.innerText = "Spotify no ve ningún dispositivo. Abre la app de Spotify y pon una canción.";
+                        statusLabel.innerText = "Spotify no ve ningún dispositivo. Abre Spotify y pon una canción.";
                         return;
                     }
                     const device = devices.find(d => d.is_active) || devices[0];
                     deviceParam = `?device_id=${device.id}`;
                     deviceName = device.name;
                 }
+            } catch (e) {
+                console.error("Error dispositivos:", e);
+            }
 
+            // 2) Mandar la canción
+            try {
                 const res = await fetch(`https://api.spotify.com/v1/me/player/play${deviceParam}`, {
                     method: 'PUT',
-                    headers,
+                    headers: { ...auth, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ uris: [uri] })
                 });
 
@@ -317,7 +320,7 @@
                 if (!res.ok) {
                     const txt = await res.text();
                     console.error("Error play:", res.status, txt);
-                    statusLabel.innerText = `Spotify respondió ${res.status}${deviceName ? ' (' + deviceName + ')' : ''}: ${txt.slice(0, 100)}`;
+                    statusLabel.innerText = `Spotify respondió ${res.status}${deviceName ? ' (' + deviceName + ')' : ''}: ${txt.slice(0, 120)}`;
                     return;
                 }
 
@@ -326,7 +329,7 @@
                 statusLabel.innerText = `¡Suena en ${deviceName || 'tu Spotify'}! ¿Qué canción es?`;
             } catch (err) {
                 console.error(err);
-                statusLabel.innerText = "Error al reproducir.";
+                statusLabel.innerText = `Error: ${err.name} - ${err.message}`;
             }
         }
 
