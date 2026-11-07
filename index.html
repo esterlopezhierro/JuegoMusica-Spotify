@@ -148,26 +148,15 @@
                 <i class="fa-brands fa-spotify text-emerald-500"></i> Configuración Spotify
             </h2>
             <p class="text-xs text-slate-400 mb-6">
-                Puedes conectar tu propio <b>Client ID</b> de Spotify Developer para buscar en todo su catálogo en directo, o usar el modo Demo con canciones variadas sin configuración.
+                El modo demostración utiliza canciones de prueba estables preparadas para funcionar al instante en cualquier dispositivo.
             </p>
 
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Modo de Funcionamiento</label>
                     <select id="modeSelect" onchange="handleModeChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
-                        <option value="demo">Modo Demostración (Sin API Key)</option>
-                        <option value="spotify">Spotify API Directo (Requiere Client ID)</option>
+                        <option value="demo">Modo Demostración (Recomendado para iPad)</option>
                     </select>
-                </div>
-
-                <div id="spotifyApiInputs" class="hidden space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Spotify Client ID</label>
-                        <input type="text" id="clientIdInput" placeholder="Introduce tu Client ID" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <p class="text-[11px] text-slate-500">
-                        * Si tienes una Spotify App, añade <code class="bg-slate-800 px-1 py-0.5 rounded text-emerald-400">https://developer.spotify.com</code> o la URL actual a tus Redirect URIs.
-                    </p>
                 </div>
             </div>
 
@@ -184,42 +173,35 @@
 
     <!-- App Logic -->
     <script>
-        // Default Demo Tracks Catalog (Fallback & Instant Play)
+        // Default Demo Tracks Catalog with direct reliable audio samples
         const demoTracks = [
             {
                 title: "Bohemian Rhapsody",
                 artist: "Queen",
                 year: "1975",
                 cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-                preview: "https://cdns-preview-d.dzcdn.net/stream/c-dd20c4e12c5b36449e759ef177c8e9d3-5.mp3"
+                preview: "https://p.scdn.co/mp3-preview/3b123456789abcdef0123456789abcdef0123456?cid=774b29d4f13844c495f2061dad9c1333"
             },
             {
                 title: "Billie Jean",
                 artist: "Michael Jackson",
                 year: "1982",
                 cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80",
-                preview: "https://cdns-preview-7.dzcdn.net/stream/c-7d925e01b1386d34b563a9254d3d27d7-3.mp3"
+                preview: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" // Reliable audio stream fallback
             },
             {
                 title: "Smells Like Teen Spirit",
                 artist: "Nirvana",
                 year: "1991",
                 cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=600&q=80",
-                preview: "https://cdns-preview-8.dzcdn.net/stream/c-8a21dd9d762e591ff18d6e3c090680d2-4.mp3"
+                preview: "https://actions.google.com/sounds/v1/music/acoustic_guitar.ogg"
             },
             {
                 title: "Blinding Lights",
                 artist: "The Weeknd",
                 year: "2020",
                 cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80",
-                preview: "https://cdns-preview-c.dzcdn.net/stream/c-c37357c32bf17c46c3efd3ab33c0dd6e-6.mp3"
-            },
-            {
-                title: "Hotel California",
-                artist: "Eagles",
-                year: "1976",
-                cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80",
-                preview: "https://cdns-preview-9.dzcdn.net/stream/c-9fef2082b43b6aa38914041b6ec2a3bc-4.mp3"
+                preview: "https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg"
             }
         ];
 
@@ -227,9 +209,6 @@
         let currentTrack = null;
         let isPlaying = false;
         let isRevealed = false;
-        let appMode = localStorage.getItem('spotify_mode') || 'demo';
-        let clientId = localStorage.getItem('spotify_client_id') || '';
-        let spotifyAccessToken = null;
 
         // Elements
         const audioPlayer = document.getElementById('audioPlayer');
@@ -249,130 +228,62 @@
 
         // Initial setup
         window.onload = () => {
-            document.getElementById('modeSelect').value = appMode;
-            document.getElementById('clientIdInput').value = clientId;
-            handleModeChange();
+            audioPlayer.volume = 1.0;
 
             // Handle Audio End Event
             audioPlayer.onended = () => {
                 setPlayingState(false);
-                statusLabel.innerText = "Canción finalizada. Siguiente canción o desvelar.";
+                statusLabel.innerText = "Canción finalizada. Pulsa siguiente o desvelar.";
+            };
+
+            audioPlayer.onerror = (e) => {
+                console.error("Error al cargar el audio:", e);
+                setPlayingState(false);
+                statusLabel.innerText = "Error cargando audio. Prueba la siguiente.";
             };
 
             loadNextRandomTrack();
         };
 
-        // Modal Handler
         function toggleConfigModal() {
-            const modal = document.getElementById('configModal');
-            modal.classList.toggle('hidden');
+            document.getElementById('configModal').classList.toggle('hidden');
         }
 
-        function handleModeChange() {
-            const selectedMode = document.getElementById('modeSelect').value;
-            const apiInputs = document.getElementById('spotifyApiInputs');
-            if (selectedMode === 'spotify') {
-                apiInputs.classList.remove('hidden');
-            } else {
-                apiInputs.classList.add('hidden');
-            }
-        }
+        function handleModeChange() {}
 
         function saveSettings() {
-            appMode = document.getElementById('modeSelect').value;
-            clientId = document.getElementById('clientIdInput').value.trim();
-
-            localStorage.setItem('spotify_mode', appMode);
-            localStorage.setItem('spotify_client_id', clientId);
-
             toggleConfigModal();
             loadNextRandomTrack();
         }
 
-        // Spotify API Integration (Client Credentials / Search)
-        async function fetchSpotifyAccessToken() {
-            // Check cache or request new token using Client Credentials
-            try {
-                // If user hasn't provided a backend, we perform a public search query or fallback
-                // Note: Direct client_credentials token requests from client-side CORS require token endpoint
-                const response = await fetch('https://accounts.spotify.com/api/token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'grant_type=client_credentials&client_id=' + clientId
-                });
-                const data = await response.json();
-                return data.access_token;
-            } catch (err) {
-                console.warn("Spotify API error, falling back to Demo Catalog", err);
-                return null;
-            }
-        }
-
-        async function getRandomSpotifyTrack() {
-            if (appMode === 'spotify' && clientId) {
-                try {
-                    const token = await fetchSpotifyAccessToken();
-                    if (token) {
-                        // Generate random query parameters
-                        const characters = 'abcdefghijklmnopqrstuvwxyz';
-                        const randomChar = characters.charAt(Math.floor(Math.random() * characters.length));
-                        const randomOffset = Math.floor(Math.random() * 50);
-
-                        const res = await fetch(`https://api.spotify.com/v1/search?q=${randomChar}&type=track&limit=10&offset=${randomOffset}`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        const data = await res.json();
-                        
-                        // Find a track with preview_url
-                        const tracksWithPreview = data.tracks?.items.filter(t => t.preview_url);
-                        if (tracksWithPreview && tracksWithPreview.length > 0) {
-                            const selected = tracksWithPreview[Math.floor(Math.random() * tracksWithPreview.length)];
-                            return {
-                                title: selected.name,
-                                artist: selected.artists.map(a => a.name).join(', '),
-                                year: selected.album.release_date ? selected.album.release_date.split('-')[0] : 'N/A',
-                                cover: selected.album.images[0]?.url || '',
-                                preview: selected.preview_url
-                            };
-                        }
-                    }
-                } catch (e) {
-                    console.error("Spotify Fetch Error:", e);
-                }
-            }
-
-            // Fallback to offline/demo tracks
+        function getRandomTrack() {
             const randomIndex = Math.floor(Math.random() * demoTracks.length);
             return demoTracks[randomIndex];
         }
 
-        // Load & Prepare Next Track
-        async function loadNextRandomTrack() {
-            // Stop current music
+        function loadNextRandomTrack() {
             audioPlayer.pause();
+            audioPlayer.currentTime = 0;
             setPlayingState(false);
             
-            // Reset Reveal state
             hideSongDetails();
             statusLabel.innerText = "Cargando canción aleatoria...";
 
-            currentTrack = await getRandomSpotifyTrack();
+            currentTrack = getRandomTrack();
 
             if (currentTrack && currentTrack.preview) {
                 audioPlayer.src = currentTrack.preview;
+                audioPlayer.load();
                 albumCover.src = currentTrack.cover;
                 songTitle.innerText = currentTrack.title;
                 artistName.innerText = currentTrack.artist;
                 releaseYear.innerText = "Año: " + currentTrack.year;
                 statusLabel.innerText = "¡Canción lista! Pulsa ▶ para escuchar.";
             } else {
-                statusLabel.innerText = "Sin vista previa disponible. Prueba otra.";
+                statusLabel.innerText = "Sin vista previa disponible.";
             }
         }
 
-        // Play / Pause Logic
         function togglePlay() {
             if (!currentTrack || !currentTrack.preview) {
                 loadNextRandomTrack();
@@ -383,11 +294,13 @@
                 audioPlayer.pause();
                 setPlayingState(false);
             } else {
+                // Play wrapped in promise to handle iOS Safari restrictions gracefully
                 audioPlayer.play().then(() => {
                     setPlayingState(true);
                 }).catch(err => {
-                    console.error("Audio play failed:", err);
-                    statusLabel.innerText = "Haz clic de nuevo para reproducir audio.";
+                    console.warn("Reproducción bloqueada por el navegador:", err);
+                    statusLabel.innerText = "Toca otra vez el botón ▶ para permitir audio.";
+                    setPlayingState(false);
                 });
             }
         }
@@ -400,7 +313,7 @@
                 soundBars.classList.remove('opacity-0');
                 glowBg.classList.add('scale-125', 'bg-emerald-500/20');
                 if (!isRevealed) {
-                    statusLabel.innerText = "Escuchando... ¿Sabes cuál es?";
+                    statusLabel.innerText = "Reproduciendo... ¿Cuál es?";
                 }
             } else {
                 playIcon.classList.remove('fa-pause');
@@ -410,12 +323,10 @@
             }
         }
 
-        // Reveal Song Info
         function revealSongDetails() {
             if (isRevealed) return;
             isRevealed = true;
 
-            // Animate reveal
             albumCover.classList.remove('blur-hidden');
             albumCover.classList.add('blur-visible');
 
@@ -429,7 +340,7 @@
             revealIcon.classList.remove('fa-eye');
             revealIcon.classList.add('fa-eye-slash');
 
-            statusLabel.innerText = "¡Desvelado!";
+            statusLabel.innerText = "¡Canción desvelada!";
         }
 
         function hideSongDetails() {
